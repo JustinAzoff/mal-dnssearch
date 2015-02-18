@@ -185,26 +185,27 @@ compare()
 {
 found=0
 tally=0
+declare -A bad_hosts
 
 echo -e "\n${ORANGE}[${END}${RED}*${END}${ORANGE}]${END} ${ORANGE}|${END}${BLUE}$PROG Results${END}${ORANGE}|${END} - ${BLUE}${FILE}${END}: ${ORANGE}$COUNT${END} total entries\n"
 while read bad_host
 do
-let tally++
-
-	[[ ${VERBOSELOG:-0} -eq 1 ]] && echo "---log: $badhost"
-		for host in $(eval "$1")
-		do
-			[[ ${VERBOSELOG:-0} -eq 1 ]] && echo "---log: $host"
-			if [[ "$bad_host" == "$host" ]]; then
-				echo -e "${ORANGE}[${END}${RED}+${END}${ORANGE}]${END} ${RED}Found${END} - host '"${ORANGE}$host${END}"' matches "
-				let found++
-			        [[ "$FWTRUE" = "1" ]] && ipblock
-		                break
-			fi
-
-		done
-
+    let tally++
+    bad_hosts[$bad_host]=1
 done < <(cut -f1 < ${MALHOSTFILE:-$MALFILEDEFAULT} | sed -e '/^#/d' -e '/^$/d')
+
+[[ ${VERBOSELOG:-0} -eq 1 ]] && echo "---log: $badhost"
+for host in $(eval "$1")
+do
+    [[ ${VERBOSELOG:-0} -eq 1 ]] && echo "---log: $host"
+    if [[ ${bad_hosts[$host]} ]] ; then
+        echo -e "${ORANGE}[${END}${RED}+${END}${ORANGE}]${END} ${RED}Found${END} - host '"${ORANGE}$host${END}"' matches "
+        let found++
+            [[ "$FWTRUE" = "1" ]] && ipblock
+    fi
+
+    done
+
 echo -e "--\n${ORANGE}[${END}${RED}=${END}${ORANGE}]${END} ${RED}$found${END} of ${ORANGE}$total${END} entries matched from ${BLUE}$MALHOSTFILE${END}"
 }
 
